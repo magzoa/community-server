@@ -1,0 +1,107 @@
+# ============================================================================
+#  community-server — Stack de producción para Portainer
+#  Servicios: app (Laravel + Nginx + PHP-FPM) · db (MariaDB) · phpmyadmin
+#  Las credenciales y secretos se definen como variables de entorno del Stack
+#  en Portainer (pestaña "Environment variables") o en un archivo .env.
+# ============================================================================
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: community-server:latest
+    container_name: community-server
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_NAME: "${APP_NAME:-AWS UG CAN}"
+      APP_ENV: production
+      APP_KEY: "${APP_KEY}"
+      APP_DEBUG: "false"
+      APP_URL: "${APP_URL:-http://localhost}"
+
+      APP_LOCALE: es
+      APP_FALLBACK_LOCALE: es
+
+      # Origen del cliente Vue en producción, para CORS (ej. http://18.231.63.186:5173)
+      CORS_ALLOWED_ORIGIN: "${CORS_ALLOWED_ORIGIN:-}"
+
+      # Base de datos → apunta al servicio "db" por la red interna de Docker
+      DB_CONNECTION: mariadb
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: "${DB_DATABASE:-community_aws}"
+      DB_USERNAME: "${DB_USERNAME:-community}"
+      DB_PASSWORD: "${DB_PASSWORD:-community}"
+
+      # Sesiones / cache / colas en base de datos (sin Redis)
+      SESSION_DRIVER: database
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+
+      # Disco de archivos públicos (avatares, banner). Cambiar a s3 si se desea.
+      FILESYSTEM_DISK: public
+
+      LOG_CHANNEL: stack
+      LOG_LEVEL: error
+
+      # Ejecuta los seeders solo la primera vez (ponlo en false tras el 1er deploy)
+      SEED_ON_DEPLOY: "${SEED_ON_DEPLOY:-false}"
+    ports:
+      # Servir la app por el puerto 80 público de la EC2
+      - "80:80"
+    volumes:
+      # Persistir los archivos subidos (storage) fuera del contenedor
+      - app_storage:/var/www/html/storage/app/public
+    networks:
+      - community
+
+  db:
+    image: mariadb:11.4
+    container_name: community-db
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: "${DB_DATABASE:-community_aws}"
+      MARIADB_USER: "${DB_USERNAME:-community}"
+      MARIADB_PASSWORD: "${DB_PASSWORD:-community}"
+      MARIADB_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-rootsecret}"
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      # Acceso a la BD desde cualquier IP (proyecto comunitario, sin datos sensibles).
+      # Requiere abrir el puerto 3306 en el Security Group de AWS.
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - community
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: community-phpmyadmin
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      UPLOAD_LIMIT: 64M
+    ports:
+      - "8080:80"
+    networks:
+      - community
+
+volumes:
+  db_data:
+  app_storage:
+
+networks:
+  community:
+    driver: bridge

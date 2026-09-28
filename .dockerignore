@@ -1,0 +1,32 @@
+.git
+.gitignore
+.gitattributes
+.editorconfig
+
+# Dependencias que se instalan dentro de la imagen
+/vendor
+/node_modules
+
+# Entornos locales / secretos
+.env
+.env.*
+!.env.production.example
+
+# Artefactos y cachés locales
+/storage/*.key
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+bootstrap/cache/*
+
+# SQLite local
+database/database.sqlite
+
+# Tests y herramientas de desarrollo
+/tests
+phpunit.xml
+README.md
+
+# Frontend (el cliente Vue se despliega aparte)
+/public/build
