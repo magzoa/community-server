@@ -10,6 +10,11 @@ class SiteSetting extends Model
         'main_title',
         'secondary_title',
         'daily_phrase',
+        'meetup_title',
+        'meetup_subtitle',
+        'meetup_description',
+        'meetup_url',
+        'meetup_image',
     ];
 
     /**

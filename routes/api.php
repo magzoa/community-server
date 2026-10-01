@@ -61,11 +61,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:admin')->group(function () {
         Route::get('/admin/roles', [AdminMemberController::class, 'availableRoles']);
         Route::get('/admin/members', [AdminMemberController::class, 'index']);
+        Route::post('/admin/members', [AdminMemberController::class, 'store']);
+        Route::post('/admin/members/{id}/avatar', [AdminMemberController::class, 'uploadAvatarFor'])->where('id', '[0-9]+');
         Route::get('/admin/members/{id}', [AdminMemberController::class, 'show'])->where('id', '[0-9]+');
         Route::post('/admin/members/{id}/approve', [AdminMemberController::class, 'approve'])->where('id', '[0-9]+');
         Route::post('/admin/members/{id}/reject', [AdminMemberController::class, 'reject'])->where('id', '[0-9]+');
         Route::put('/admin/members/{id}/roles', [AdminMemberController::class, 'updateRoles'])->where('id', '[0-9]+');
         Route::put('/admin/members/{id}/catalogs', [AdminMemberController::class, 'updateCatalogs'])->where('id', '[0-9]+');
+        Route::put('/admin/members/{id}/nickname', [AdminMemberController::class, 'updateNickname'])->where('id', '[0-9]+');
+        Route::put('/admin/members/{id}', [AdminMemberController::class, 'update'])->where('id', '[0-9]+');
         Route::delete('/admin/members/{id}', [AdminMemberController::class, 'destroy'])->where('id', '[0-9]+');
 
         // ABM de catálogos (roles de comunidad / perfiles profesionales)
@@ -80,6 +84,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Banner del home: textos + redes
         Route::put('/admin/site-settings', [SiteSettingController::class, 'update']);
+        Route::post('/admin/site-settings/meetup-image', [SiteSettingController::class, 'uploadMeetupImage']);
+        Route::delete('/admin/site-settings/meetup-image', [SiteSettingController::class, 'deleteMeetupImage']);
         Route::get('/admin/banner-social-links', [BannerSocialLinkController::class, 'index']);
         Route::post('/admin/banner-social-links', [BannerSocialLinkController::class, 'store']);
         Route::put('/admin/banner-social-links/{id}', [BannerSocialLinkController::class, 'update'])->where('id', '[0-9]+');
